@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image RGB Analyzer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    #preview {
+      max-width: 300px;
+      margin-top: 10px;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Image RGB Analyzer</h1>
+  <input type="file" accept="image/*" id="imageInput" onchange="processImage()">
+  <br>
+  <img id="preview" alt="Image Preview" />
+  <canvas id="rgbChart"></canvas>
+
+  <script>
+    let chart;
+
+    function processImage() {
+      const input = document.getElementById("imageInput");
+      const file = input.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        img.src = e.target.result;
+        document.getElementById("preview").src = img.src;
+      };
+
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        let totalPixels = imageData.length / 4;
+        let rSum = 0, gSum = 0, bSum = 0;
+
+        for (let i = 0; i < imageData.length; i += 4) {
+          rSum += imageData[i];     // Red
+          gSum += imageData[i + 1]; // Green
+          bSum += imageData[i + 2]; // Blue
+        }
+
+        const avgR = Math.round(rSum / totalPixels);
+        const avgG = Math.round(gSum / totalPixels);
+        const avgB = Math.round(bSum / totalPixels);
+
+        renderChart(avgR, avgG, avgB);
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function renderChart(r, g, b) {
+      const ctx = document.getElementById('rgbChart').getContext('2d');
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Red', 'Green', 'Blue'],
+          datasets: [{
+            label: 'Average RGB Value',
+            data: [r, g, b],
+            backgroundColor: ['red', 'green', 'blue']
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true, max: 255 }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
